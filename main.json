@@ -11,7 +11,7 @@
   "parameters": {
     "appName": {
       "type": "string",
-      "defaultValue": "rag-ai-api",
+      "defaultValue": "teios-ai-api",
       "minLength": 1,
       "maxLength": 50,
       "metadata": {
@@ -196,7 +196,7 @@
     {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2023-01-01",
-      "name": "[format('rag-ai-webui-plan-{0}', variables('resourceToken'))]",
+      "name": "[format('teios-ai-webui-plan-{0}', variables('resourceToken'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "sku": {
@@ -228,7 +228,7 @@
           "use32BitWorkerProcess": false,
           "webSocketsEnabled": false,
           "managedPipelineMode": "Integrated",
-          "cors": "[if(parameters('enableCors'), createObject('allowedOrigins', createArray(format('https://rag-ai-webui-{0}.azurewebsites.net', variables('resourceToken')), 'http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080'), 'supportCredentials', true()), null())]",
+          "cors": "[if(parameters('enableCors'), createObject('allowedOrigins', createArray(format('https://teios-ai-webui-{0}.azurewebsites.net', variables('resourceToken')), 'http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080'), 'supportCredentials', true()), null())]",
           "appSettings": [
             {
               "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
@@ -256,51 +256,51 @@
             },
             {
               "name": "AZURE_OPENAI_ENDPOINT",
-              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken'))), '2023-05-01').endpoint]"
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('teios-ai-{0}', variables('resourceToken'))), '2023-05-01').endpoint]"
             },
             {
               "name": "AZURE_OPENAI_API_KEY",
-              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken'))), '2023-05-01').key1]"
+              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', format('teios-ai-{0}', variables('resourceToken'))), '2023-05-01').key1]"
             },
             {
               "name": "COSMOS_DB_ENDPOINT",
-              "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', format('rag-cosmos-{0}', variables('resourceToken'))), '2023-04-15').documentEndpoint]"
+              "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', format('teios-cosmos-{0}', variables('resourceToken'))), '2023-04-15').documentEndpoint]"
             },
             {
               "name": "COSMOS_DB_KEY",
-              "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', format('rag-cosmos-{0}', variables('resourceToken'))), '2023-04-15').primaryMasterKey]"
+              "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', format('teios-cosmos-{0}', variables('resourceToken'))), '2023-04-15').primaryMasterKey]"
             },
             {
               "name": "SEARCH_SERVICE_ENDPOINT",
-              "value": "[format('https://{0}.search.windows.net', format('rag-search-{0}', variables('resourceToken')))]"
+              "value": "[format('https://{0}.search.windows.net', format('teios-search-{0}', variables('resourceToken')))]"
             },
             {
               "name": "SEARCH_SERVICE_KEY",
-              "value": "[listAdminKeys(resourceId('Microsoft.Search/searchServices', format('rag-search-{0}', variables('resourceToken'))), '2023-11-01').primaryKey]"
+              "value": "[listAdminKeys(resourceId('Microsoft.Search/searchServices', format('teios-search-{0}', variables('resourceToken'))), '2023-11-01').primaryKey]"
             },
             {
               "name": "STORAGE_ACCOUNT_NAME",
-              "value": "[format('ragdocs{0}', variables('resourceToken'))]"
+              "value": "[format('teiosdocs{0}', variables('resourceToken'))]"
             },
             {
               "name": "STORAGE_ACCOUNT_KEY",
-              "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken'))), '2023-01-01').keys[0].value]"
+              "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', format('teiosdocs{0}', variables('resourceToken'))), '2023-01-01').keys[0].value]"
             },
             {
               "name": "STORAGE_ACCOUNT_CONNECTION_STRING",
-              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', format('ragdocs{0}', variables('resourceToken')), listKeys(resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken'))), '2023-01-01').keys[0].value)]"
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', format('teiosdocs{0}', variables('resourceToken')), listKeys(resourceId('Microsoft.Storage/storageAccounts', format('teiosdocs{0}', variables('resourceToken'))), '2023-01-01').keys[0].value)]"
             },
             {
               "name": "SQL_SERVER_NAME",
-              "value": "[reference(resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken'))), '2023-02-01-preview').fullyQualifiedDomainName]"
+              "value": "[reference(resourceId('Microsoft.Sql/servers', format('teios-sql-{0}', variables('resourceToken'))), '2023-02-01-preview').fullyQualifiedDomainName]"
             },
             {
               "name": "SQL_DATABASE_NAME",
-              "value": "rag_ai_bot_main"
+              "value": "teios_ai_bot_main"
             },
             {
               "name": "SQL_CONNECTION_STRING",
-              "value": "[format('Server=tcp:{0},1433;Database={1};Authentication=Active Directory Managed Identity;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;', reference(resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken'))), '2023-02-01-preview').fullyQualifiedDomainName, 'rag_ai_bot_main')]"
+              "value": "[format('Server=tcp:{0},1433;Database={1};Authentication=Active Directory Managed Identity;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;', reference(resourceId('Microsoft.Sql/servers', format('teios-sql-{0}', variables('resourceToken'))), '2023-02-01-preview').fullyQualifiedDomainName, 'teios_ai_bot_main')]"
             }
           ]
         },
@@ -308,25 +308,25 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', format('{0}-plan-{1}', parameters('appName'), variables('resourceToken')))]",
-        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('rag-cosmos-{0}', variables('resourceToken')))]",
-        "[resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken')))]",
-        "[resourceId('Microsoft.Search/searchServices', format('rag-search-{0}', variables('resourceToken')))]",
-        "[resourceId('Microsoft.Sql/servers/databases', format('rag-sql-{0}', variables('resourceToken')), 'rag_ai_bot_main')]",
-        "[resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken')))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken')))]"
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('teios-cosmos-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('teios-ai-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Search/searchServices', format('teios-search-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Sql/servers/databases', format('teios-sql-{0}', variables('resourceToken')), 'teios_ai_bot_main')]",
+        "[resourceId('Microsoft.Sql/servers', format('teios-sql-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('teiosdocs{0}', variables('resourceToken')))]"
       ]
     },
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2023-01-01",
-      "name": "[format('rag-ai-webui-{0}', variables('resourceToken'))]",
+      "name": "[format('teios-ai-webui-{0}', variables('resourceToken'))]",
       "location": "[parameters('location')]",
       "tags": "[union(variables('tags'), createObject('azd-service-name', 'webui'))]",
       "identity": {
         "type": "SystemAssigned"
       },
       "properties": {
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('rag-ai-webui-plan-{0}', variables('resourceToken')))]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('teios-ai-webui-plan-{0}', variables('resourceToken')))]",
         "httpsOnly": true,
         "siteConfig": {
           "linuxFxVersion": "[format('NODE|{0}', parameters('nodeVersion'))]",
@@ -376,15 +376,15 @@
             },
             {
               "name": "AZURE_OPENAI_ENDPOINT",
-              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken'))), '2023-05-01').endpoint]"
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('teios-ai-{0}', variables('resourceToken'))), '2023-05-01').endpoint]"
             },
             {
               "name": "SEARCH_SERVICE_ENDPOINT",
-              "value": "[format('https://{0}.search.windows.net', format('rag-search-{0}', variables('resourceToken')))]"
+              "value": "[format('https://{0}.search.windows.net', format('teios-search-{0}', variables('resourceToken')))]"
             },
             {
               "name": "STORAGE_ACCOUNT_ENDPOINT",
-              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken'))), '2023-01-01').primaryEndpoints.blob]"
+              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', format('teiosdocs{0}', variables('resourceToken'))), '2023-01-01').primaryEndpoints.blob]"
             }
           ]
         },
@@ -392,10 +392,10 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', format('{0}-{1}', parameters('appName'), variables('resourceToken')))]",
-        "[resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken')))]",
-        "[resourceId('Microsoft.Search/searchServices', format('rag-search-{0}', variables('resourceToken')))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken')))]",
-        "[resourceId('Microsoft.Web/serverfarms', format('rag-ai-webui-plan-{0}', variables('resourceToken')))]"
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('teios-ai-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Search/searchServices', format('teios-search-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('teiosdocs{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Web/serverfarms', format('teios-ai-webui-plan-{0}', variables('resourceToken')))]"
       ]
     },
     {
@@ -411,16 +411,16 @@
         "DisableIpMasking": false,
         "DisableLocalAuth": false,
         "ForceCustomerStorageForProfiler": false,
-        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('rag-logs-{0}', variables('resourceToken')))]"
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('teios-logs-{0}', variables('resourceToken')))]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.OperationalInsights/workspaces', format('rag-logs-{0}', variables('resourceToken')))]"
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('teios-logs-{0}', variables('resourceToken')))]"
       ]
     },
     {
       "type": "Microsoft.OperationalInsights/workspaces",
       "apiVersion": "2022-10-01",
-      "name": "[format('rag-logs-{0}', variables('resourceToken'))]",
+      "name": "[format('teios-logs-{0}', variables('resourceToken'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "properties": {
@@ -438,7 +438,7 @@
     {
       "type": "Microsoft.CognitiveServices/accounts",
       "apiVersion": "2023-05-01",
-      "name": "[format('rag-ai-{0}', variables('resourceToken'))]",
+      "name": "[format('teios-ai-{0}', variables('resourceToken'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "kind": "OpenAI",
@@ -446,7 +446,7 @@
         "name": "[parameters('openAiSku')]"
       },
       "properties": {
-        "customSubDomainName": "[format('rag-ai-{0}', variables('resourceToken'))]",
+        "customSubDomainName": "[format('teios-ai-{0}', variables('resourceToken'))]",
         "publicNetworkAccess": "Enabled",
         "disableLocalAuth": false
       }
@@ -454,7 +454,7 @@
     {
       "type": "Microsoft.DocumentDB/databaseAccounts",
       "apiVersion": "2023-04-15",
-      "name": "[format('rag-cosmos-{0}', variables('resourceToken'))]",
+      "name": "[format('teios-cosmos-{0}', variables('resourceToken'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "kind": "GlobalDocumentDB",
@@ -481,7 +481,7 @@
     {
       "type": "Microsoft.Search/searchServices",
       "apiVersion": "2023-11-01",
-      "name": "[format('rag-search-{0}', variables('resourceToken'))]",
+      "name": "[format('teios-search-{0}', variables('resourceToken'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "sku": {
@@ -507,7 +507,7 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2023-01-01",
-      "name": "[format('ragdocs{0}', variables('resourceToken'))]",
+      "name": "[format('teiosdocs{0}', variables('resourceToken'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "kind": "StorageV2",
@@ -531,7 +531,7 @@
     {
       "type": "Microsoft.Storage/storageAccounts/blobServices",
       "apiVersion": "2023-01-01",
-      "name": "[format('{0}/{1}', format('ragdocs{0}', variables('resourceToken')), 'default')]",
+      "name": "[format('{0}/{1}', format('teiosdocs{0}', variables('resourceToken')), 'default')]",
       "properties": {
         "deleteRetentionPolicy": {
           "enabled": true,
@@ -543,13 +543,13 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken')))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', format('teiosdocs{0}', variables('resourceToken')))]"
       ]
     },
     {
       "type": "Microsoft.Sql/servers",
       "apiVersion": "2023-02-01-preview",
-      "name": "[format('rag-sql-{0}', variables('resourceToken'))]",
+      "name": "[format('teios-sql-{0}', variables('resourceToken'))]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "properties": {
@@ -559,16 +559,16 @@
           "azureADOnlyAuthentication": true,
           "administratorType": "ActiveDirectory",
           "principalType": "Application",
-          "login": "[format('rag-ai-api-identity-{0}', variables('resourceToken'))]",
-          "sid": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('rag-ai-api-identity-{0}', variables('resourceToken'))), '2023-01-31').principalId]",
-          "tenantId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('rag-ai-api-identity-{0}', variables('resourceToken'))), '2023-01-31').tenantId]"
+          "login": "[format('teios-ai-api-identity-{0}', variables('resourceToken'))]",
+          "sid": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('teios-ai-api-identity-{0}', variables('resourceToken'))), '2023-01-31').principalId]",
+          "tenantId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('teios-ai-api-identity-{0}', variables('resourceToken'))), '2023-01-31').tenantId]"
         }
       }
     },
     {
       "type": "Microsoft.Sql/servers/databases",
       "apiVersion": "2023-02-01-preview",
-      "name": "[format('{0}/{1}', format('rag-sql-{0}', variables('resourceToken')), 'rag_ai_bot_main')]",
+      "name": "[format('{0}/{1}', format('teios-sql-{0}', variables('resourceToken')), 'teios_ai_bot_main')]",
       "location": "[parameters('location')]",
       "tags": "[variables('tags')]",
       "sku": {
@@ -585,19 +585,19 @@
         "isLedgerOn": false
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken')))]"
+        "[resourceId('Microsoft.Sql/servers', format('teios-sql-{0}', variables('resourceToken')))]"
       ]
     },
     {
       "type": "Microsoft.Sql/servers/firewallRules",
       "apiVersion": "2023-02-01-preview",
-      "name": "[format('{0}/{1}', format('rag-sql-{0}', variables('resourceToken')), 'AllowAllWindowsAzureIps')]",
+      "name": "[format('{0}/{1}', format('teios-sql-{0}', variables('resourceToken')), 'AllowAllWindowsAzureIps')]",
       "properties": {
         "startIpAddress": "0.0.0.0",
         "endIpAddress": "0.0.0.0"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken')))]"
+        "[resourceId('Microsoft.Sql/servers', format('teios-sql-{0}', variables('resourceToken')))]"
       ]
     }
   ],
@@ -621,14 +621,14 @@
       "metadata": {
         "description": "The name of the WebUI App Service"
       },
-      "value": "[format('rag-ai-webui-{0}', variables('resourceToken'))]"
+      "value": "[format('teios-ai-webui-{0}', variables('resourceToken'))]"
     },
     "AZURE_WEBUI_URL": {
       "type": "string",
       "metadata": {
         "description": "The URL of the WebUI App Service"
       },
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('rag-ai-webui-{0}', variables('resourceToken'))), '2023-01-01').defaultHostName)]"
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('teios-ai-webui-{0}', variables('resourceToken'))), '2023-01-01').defaultHostName)]"
     },
     "appServiceId": {
       "type": "string",
@@ -642,7 +642,7 @@
       "metadata": {
         "description": "The resource ID of the WebUI App Service"
       },
-      "value": "[resourceId('Microsoft.Web/sites', format('rag-ai-webui-{0}', variables('resourceToken')))]"
+      "value": "[resourceId('Microsoft.Web/sites', format('teios-ai-webui-{0}', variables('resourceToken')))]"
     },
     "appServicePrincipalId": {
       "type": "string",
@@ -656,7 +656,7 @@
       "metadata": {
         "description": "The principal ID of the WebUI App Service managed identity"
       },
-      "value": "[reference(resourceId('Microsoft.Web/sites', format('rag-ai-webui-{0}', variables('resourceToken'))), '2023-01-01', 'full').identity.principalId]"
+      "value": "[reference(resourceId('Microsoft.Web/sites', format('teios-ai-webui-{0}', variables('resourceToken'))), '2023-01-01', 'full').identity.principalId]"
     },
     "applicationInsightsInstrumentationKey": {
       "type": "string",
@@ -677,77 +677,77 @@
       "metadata": {
         "description": "Azure OpenAI Service endpoint"
       },
-      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken'))), '2023-05-01').endpoint]"
+      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('teios-ai-{0}', variables('resourceToken'))), '2023-05-01').endpoint]"
     },
     "openAiServiceName": {
       "type": "string",
       "metadata": {
         "description": "Azure OpenAI Service name"
       },
-      "value": "[format('rag-ai-{0}', variables('resourceToken'))]"
+      "value": "[format('teios-ai-{0}', variables('resourceToken'))]"
     },
     "cosmosDbEndpoint": {
       "type": "string",
       "metadata": {
         "description": "Cosmos DB account endpoint"
       },
-      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', format('rag-cosmos-{0}', variables('resourceToken'))), '2023-04-15').documentEndpoint]"
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', format('teios-cosmos-{0}', variables('resourceToken'))), '2023-04-15').documentEndpoint]"
     },
     "cosmosDbAccountName": {
       "type": "string",
       "metadata": {
         "description": "Cosmos DB account name"
       },
-      "value": "[format('rag-cosmos-{0}', variables('resourceToken'))]"
+      "value": "[format('teios-cosmos-{0}', variables('resourceToken'))]"
     },
     "searchServiceEndpoint": {
       "type": "string",
       "metadata": {
         "description": "AI Search service endpoint"
       },
-      "value": "[format('https://{0}.search.windows.net', format('rag-search-{0}', variables('resourceToken')))]"
+      "value": "[format('https://{0}.search.windows.net', format('teios-search-{0}', variables('resourceToken')))]"
     },
     "searchServiceName": {
       "type": "string",
       "metadata": {
         "description": "AI Search service name"
       },
-      "value": "[format('rag-search-{0}', variables('resourceToken'))]"
+      "value": "[format('teios-search-{0}', variables('resourceToken'))]"
     },
     "storageAccountName": {
       "type": "string",
       "metadata": {
         "description": "Storage Account name"
       },
-      "value": "[format('ragdocs{0}', variables('resourceToken'))]"
+      "value": "[format('teiosdocs{0}', variables('resourceToken'))]"
     },
     "storageAccountBlobEndpoint": {
       "type": "string",
       "metadata": {
         "description": "Storage Account blob endpoint"
       },
-      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken'))), '2023-01-01').primaryEndpoints.blob]"
+      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', format('teiosdocs{0}', variables('resourceToken'))), '2023-01-01').primaryEndpoints.blob]"
     },
     "sqlServerName": {
       "type": "string",
       "metadata": {
         "description": "SQL Server name"
       },
-      "value": "[format('rag-sql-{0}', variables('resourceToken'))]"
+      "value": "[format('teios-sql-{0}', variables('resourceToken'))]"
     },
     "sqlDatabaseName": {
       "type": "string",
       "metadata": {
         "description": "SQL Database name"
       },
-      "value": "rag_ai_bot_main"
+      "value": "teios_ai_bot_main"
     },
     "sqlServerFqdn": {
       "type": "string",
       "metadata": {
         "description": "SQL Server FQDN"
       },
-      "value": "[reference(resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken'))), '2023-02-01-preview').fullyQualifiedDomainName]"
+      "value": "[reference(resourceId('Microsoft.Sql/servers', format('teios-sql-{0}', variables('resourceToken'))), '2023-02-01-preview').fullyQualifiedDomainName]"
     }
   }
 }

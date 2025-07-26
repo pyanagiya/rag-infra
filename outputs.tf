@@ -1,5 +1,6 @@
-# Output values for RAG AI-Driven API and WebUI Terraform configuration
+# RAG AI-Driven Chatbot Infrastructure Outputs
 
+# App Service outputs
 output "AZURE_WEBAPP_NAME" {
   description = "The name of the API App Service"
   value       = azurerm_linux_web_app.api.name
@@ -40,6 +41,7 @@ output "webui_app_service_principal_id" {
   value       = azurerm_linux_web_app.webui.identity[0].principal_id
 }
 
+# Application Insights outputs
 output "application_insights_instrumentation_key" {
   description = "Application Insights Instrumentation Key"
   value       = azurerm_application_insights.main.instrumentation_key
@@ -52,6 +54,7 @@ output "application_insights_connection_string" {
   sensitive   = true
 }
 
+# Azure OpenAI outputs
 output "openai_endpoint" {
   description = "Azure OpenAI Service endpoint"
   value       = azurerm_cognitive_account.openai.endpoint
@@ -62,6 +65,7 @@ output "openai_service_name" {
   value       = azurerm_cognitive_account.openai.name
 }
 
+# Cosmos DB outputs
 output "cosmos_db_endpoint" {
   description = "Cosmos DB account endpoint"
   value       = azurerm_cosmosdb_account.main.endpoint
@@ -72,6 +76,7 @@ output "cosmos_db_account_name" {
   value       = azurerm_cosmosdb_account.main.name
 }
 
+# AI Search outputs
 output "search_service_endpoint" {
   description = "AI Search service endpoint"
   value       = "https://${azurerm_search_service.main.name}.search.windows.net"
@@ -82,6 +87,7 @@ output "search_service_name" {
   value       = azurerm_search_service.main.name
 }
 
+# Storage Account outputs
 output "storage_account_name" {
   description = "Storage Account name"
   value       = azurerm_storage_account.main.name
@@ -92,6 +98,7 @@ output "storage_account_blob_endpoint" {
   value       = azurerm_storage_account.main.primary_blob_endpoint
 }
 
+# SQL Database outputs
 output "sql_server_name" {
   description = "SQL Server name"
   value       = azurerm_mssql_server.main.name
@@ -105,14 +112,4 @@ output "sql_database_name" {
 output "sql_server_fqdn" {
   description = "SQL Server FQDN"
   value       = azurerm_mssql_server.main.fully_qualified_domain_name
-}
-
-output "key_vault_name" {
-  description = "Key Vault name"
-  value       = azurerm_key_vault.main.name
-}
-
-output "key_vault_uri" {
-  description = "Key Vault URI"
-  value       = azurerm_key_vault.main.vault_uri
 }

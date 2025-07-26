@@ -1,4 +1,4 @@
-// Main Bicep template for RAG AI-Driven API and WebUI
+// Main Bicep template for TEIOS AI-Driven API and WebUI
 // Azure Developer CLI compatible deployment
 
 targetScope = 'resourceGroup'
@@ -6,7 +6,7 @@ targetScope = 'resourceGroup'
 @minLength(1)
 @maxLength(50)
 @description('Name of the application')
-param appName string = 'rag-ai-api'
+param appName string = 'teios-ai-api'
 
 @description('Location for all resources')
 param location string = resourceGroup().location
@@ -69,7 +69,7 @@ var tags = {
 
 // Reference to existing User-Assigned Managed Identity
 resource existingManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' existing = {
-  name: 'rag-ai-api-identity-${resourceToken}'
+  name: 'teios-ai-api-identity-${resourceToken}'
 }
 
 // App Service Plan for API
@@ -88,7 +88,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
 
 // WebUI App Service Plan
 resource webuiAppServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
-  name: 'rag-ai-webui-plan-${resourceToken}'
+  name: 'teios-ai-webui-plan-${resourceToken}'
   location: location
   tags: tags
   sku: {
@@ -124,7 +124,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
       managedPipelineMode: 'Integrated'
       cors: enableCors ? {
         allowedOrigins: [
-          'https://rag-ai-webui-${resourceToken}.azurewebsites.net'
+          'https://teios-ai-webui-${resourceToken}.azurewebsites.net'
           'http://localhost:3000'
           'http://localhost:5173'
           'http://localhost:8080'
@@ -212,7 +212,7 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
 
 // WebUI App Service
 resource webuiAppService 'Microsoft.Web/sites@2023-01-01' = {
-  name: 'rag-ai-webui-${resourceToken}'
+  name: 'teios-ai-webui-${resourceToken}'
   location: location
   tags: union(tags, {
     'azd-service-name': 'webui'
@@ -305,7 +305,7 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
 
 // Log Analytics Workspace for Application Insights
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
-  name: 'rag-logs-${resourceToken}'
+  name: 'teios-logs-${resourceToken}'
   location: location
   tags: tags
   properties: {
@@ -323,7 +323,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
 
 // Azure OpenAI Service
 resource openAiService 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
-  name: 'rag-ai-${resourceToken}'
+  name: 'teios-ai-${resourceToken}'
   location: location
   tags: tags
   kind: 'OpenAI'
@@ -331,7 +331,7 @@ resource openAiService 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
     name: openAiSku
   }
   properties: {
-    customSubDomainName: 'rag-ai-${resourceToken}'
+    customSubDomainName: 'teios-ai-${resourceToken}'
     publicNetworkAccess: 'Enabled'
     disableLocalAuth: false
   }
@@ -339,7 +339,7 @@ resource openAiService 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
 
 // Cosmos DB Account
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
-  name: 'rag-cosmos-${resourceToken}'
+  name: 'teios-cosmos-${resourceToken}'
   location: location
   tags: tags
   kind: 'GlobalDocumentDB'
@@ -370,7 +370,7 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {
 
 // AI Search Service
 resource searchService 'Microsoft.Search/searchServices@2023-11-01' = {
-  name: 'rag-search-${resourceToken}'
+  name: 'teios-search-${resourceToken}'
   location: location
   tags: tags
   sku: {
@@ -396,7 +396,7 @@ resource searchService 'Microsoft.Search/searchServices@2023-11-01' = {
 
 // Storage Account
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: 'ragdocs${resourceToken}'
+  name: 'teiosdocs${resourceToken}'
   location: location
   tags: tags
   kind: 'StorageV2'
@@ -436,7 +436,7 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01'
 
 // SQL Server
 resource sqlServer 'Microsoft.Sql/servers@2023-02-01-preview' = {
-  name: 'rag-sql-${resourceToken}'
+  name: 'teios-sql-${resourceToken}'
   location: location
   tags: tags
   properties: {
@@ -456,7 +456,7 @@ resource sqlServer 'Microsoft.Sql/servers@2023-02-01-preview' = {
 // SQL Database
 resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-02-01-preview' = {
   parent: sqlServer
-  name: 'rag_ai_bot_main'
+  name: 'teios_ai_bot_main'
   location: location
   tags: tags
   sku: {
