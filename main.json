@@ -1,0 +1,753 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.36.177.2456",
+      "templateHash": "17329735658680278116"
+    }
+  },
+  "parameters": {
+    "appName": {
+      "type": "string",
+      "defaultValue": "rag-ai-api",
+      "minLength": 1,
+      "maxLength": 50,
+      "metadata": {
+        "description": "Name of the application"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "environmentName": {
+      "type": "string",
+      "metadata": {
+        "description": "Environment name (dev, staging, prod)"
+      }
+    },
+    "appServicePlanSku": {
+      "type": "string",
+      "defaultValue": "B1",
+      "allowedValues": [
+        "F1",
+        "B1",
+        "B2",
+        "S1",
+        "S2",
+        "S3",
+        "P1V2",
+        "P2V2",
+        "P3V2"
+      ],
+      "metadata": {
+        "description": "SKU for App Service Plan"
+      }
+    },
+    "pythonVersion": {
+      "type": "string",
+      "defaultValue": "3.11",
+      "allowedValues": [
+        "3.9",
+        "3.10",
+        "3.11"
+      ],
+      "metadata": {
+        "description": "Python runtime version"
+      }
+    },
+    "nodeVersion": {
+      "type": "string",
+      "defaultValue": "20-lts",
+      "allowedValues": [
+        "18-lts",
+        "20-lts"
+      ],
+      "metadata": {
+        "description": "Node.js runtime version for WebUI"
+      }
+    },
+    "enableCors": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable CORS for API"
+      }
+    },
+    "openAiSku": {
+      "type": "string",
+      "defaultValue": "S0",
+      "allowedValues": [
+        "S0"
+      ],
+      "metadata": {
+        "description": "Azure OpenAI SKU"
+      }
+    },
+    "cosmosDbOfferType": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": [
+        "Standard"
+      ],
+      "metadata": {
+        "description": "Cosmos DB offer type"
+      }
+    },
+    "cosmosDbServerless": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable Cosmos DB Serverless"
+      }
+    },
+    "searchSku": {
+      "type": "string",
+      "defaultValue": "basic",
+      "allowedValues": [
+        "free",
+        "basic",
+        "standard",
+        "standard2",
+        "standard3",
+        "storage_optimized_l1",
+        "storage_optimized_l2"
+      ],
+      "metadata": {
+        "description": "AI Search SKU"
+      }
+    },
+    "storageAccountSku": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Storage Account SKU"
+      }
+    },
+    "storageAccessTier": {
+      "type": "string",
+      "defaultValue": "Hot",
+      "allowedValues": [
+        "Hot",
+        "Cool"
+      ],
+      "metadata": {
+        "description": "Storage Account access tier"
+      }
+    },
+    "sqlDatabaseEdition": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium",
+        "GeneralPurpose",
+        "BusinessCritical",
+        "Hyperscale"
+      ],
+      "metadata": {
+        "description": "SQL Database edition"
+      }
+    },
+    "sqlDatabaseCollation": {
+      "type": "string",
+      "defaultValue": "Japanese_CI_AS",
+      "metadata": {
+        "description": "SQL Database collation"
+      }
+    }
+  },
+  "variables": {
+    "resourceToken": "iymm4la6qt4mo",
+    "tags": {
+      "Application": "[parameters('appName')]",
+      "Environment": "[parameters('environmentName')]",
+      "azd-env-name": "[parameters('environmentName')]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-01-01",
+      "name": "[format('{0}-plan-{1}', parameters('appName'), variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "[parameters('appServicePlanSku')]"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2023-01-01",
+      "name": "[format('rag-ai-webui-plan-{0}', variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "[parameters('appServicePlanSku')]"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-01-01",
+      "name": "[format('{0}-{1}', parameters('appName'), variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[union(variables('tags'), createObject('azd-service-name', 'api'))]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('{0}-plan-{1}', parameters('appName'), variables('resourceToken')))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "[format('PYTHON|{0}', parameters('pythonVersion'))]",
+          "alwaysOn": true,
+          "ftpsState": "Disabled",
+          "minTlsVersion": "1.2",
+          "scmMinTlsVersion": "1.2",
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "managedPipelineMode": "Integrated",
+          "cors": "[if(parameters('enableCors'), createObject('allowedOrigins', createArray(format('https://rag-ai-webui-{0}.azurewebsites.net', variables('resourceToken')), 'http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080'), 'supportCredentials', true()), null())]",
+          "appSettings": [
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            },
+            {
+              "name": "WEBSITES_PORT",
+              "value": "8000"
+            },
+            {
+              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+              "value": "true"
+            },
+            {
+              "name": "ENABLE_ORYX_BUILD",
+              "value": "true"
+            },
+            {
+              "name": "ENVIRONMENT",
+              "value": "[parameters('environmentName')]"
+            },
+            {
+              "name": "PYTHON_ENABLE_GUNICORN_MULTIWORKERS",
+              "value": "true"
+            },
+            {
+              "name": "AZURE_OPENAI_ENDPOINT",
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken'))), '2023-05-01').endpoint]"
+            },
+            {
+              "name": "AZURE_OPENAI_API_KEY",
+              "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken'))), '2023-05-01').key1]"
+            },
+            {
+              "name": "COSMOS_DB_ENDPOINT",
+              "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', format('rag-cosmos-{0}', variables('resourceToken'))), '2023-04-15').documentEndpoint]"
+            },
+            {
+              "name": "COSMOS_DB_KEY",
+              "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', format('rag-cosmos-{0}', variables('resourceToken'))), '2023-04-15').primaryMasterKey]"
+            },
+            {
+              "name": "SEARCH_SERVICE_ENDPOINT",
+              "value": "[format('https://{0}.search.windows.net', format('rag-search-{0}', variables('resourceToken')))]"
+            },
+            {
+              "name": "SEARCH_SERVICE_KEY",
+              "value": "[listAdminKeys(resourceId('Microsoft.Search/searchServices', format('rag-search-{0}', variables('resourceToken'))), '2023-11-01').primaryKey]"
+            },
+            {
+              "name": "STORAGE_ACCOUNT_NAME",
+              "value": "[format('ragdocs{0}', variables('resourceToken'))]"
+            },
+            {
+              "name": "STORAGE_ACCOUNT_KEY",
+              "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken'))), '2023-01-01').keys[0].value]"
+            },
+            {
+              "name": "STORAGE_ACCOUNT_CONNECTION_STRING",
+              "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1};EndpointSuffix=core.windows.net', format('ragdocs{0}', variables('resourceToken')), listKeys(resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken'))), '2023-01-01').keys[0].value)]"
+            },
+            {
+              "name": "SQL_SERVER_NAME",
+              "value": "[reference(resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken'))), '2023-02-01-preview').fullyQualifiedDomainName]"
+            },
+            {
+              "name": "SQL_DATABASE_NAME",
+              "value": "rag_ai_bot_main"
+            },
+            {
+              "name": "SQL_CONNECTION_STRING",
+              "value": "[format('Server=tcp:{0},1433;Database={1};Authentication=Active Directory Managed Identity;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;', reference(resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken'))), '2023-02-01-preview').fullyQualifiedDomainName, 'rag_ai_bot_main')]"
+            }
+          ]
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', format('{0}-plan-{1}', parameters('appName'), variables('resourceToken')))]",
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', format('rag-cosmos-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Search/searchServices', format('rag-search-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Sql/servers/databases', format('rag-sql-{0}', variables('resourceToken')), 'rag_ai_bot_main')]",
+        "[resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2023-01-01",
+      "name": "[format('rag-ai-webui-{0}', variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[union(variables('tags'), createObject('azd-service-name', 'webui'))]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', format('rag-ai-webui-plan-{0}', variables('resourceToken')))]",
+        "httpsOnly": true,
+        "siteConfig": {
+          "linuxFxVersion": "[format('NODE|{0}', parameters('nodeVersion'))]",
+          "alwaysOn": true,
+          "ftpsState": "Disabled",
+          "minTlsVersion": "1.2",
+          "scmMinTlsVersion": "1.2",
+          "use32BitWorkerProcess": false,
+          "webSocketsEnabled": false,
+          "managedPipelineMode": "Integrated",
+          "appSettings": [
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            },
+            {
+              "name": "WEBSITES_PORT",
+              "value": "3000"
+            },
+            {
+              "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+              "value": "true"
+            },
+            {
+              "name": "ENABLE_ORYX_BUILD",
+              "value": "true"
+            },
+            {
+              "name": "ENVIRONMENT",
+              "value": "[parameters('environmentName')]"
+            },
+            {
+              "name": "REACT_APP_API_URL",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('{0}-{1}', parameters('appName'), variables('resourceToken'))), '2023-01-01').defaultHostName)]"
+            },
+            {
+              "name": "VITE_API_URL",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('{0}-{1}', parameters('appName'), variables('resourceToken'))), '2023-01-01').defaultHostName)]"
+            },
+            {
+              "name": "NEXT_PUBLIC_API_URL",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('{0}-{1}', parameters('appName'), variables('resourceToken'))), '2023-01-01').defaultHostName)]"
+            },
+            {
+              "name": "VUE_APP_API_URL",
+              "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('{0}-{1}', parameters('appName'), variables('resourceToken'))), '2023-01-01').defaultHostName)]"
+            },
+            {
+              "name": "AZURE_OPENAI_ENDPOINT",
+              "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken'))), '2023-05-01').endpoint]"
+            },
+            {
+              "name": "SEARCH_SERVICE_ENDPOINT",
+              "value": "[format('https://{0}.search.windows.net', format('rag-search-{0}', variables('resourceToken')))]"
+            },
+            {
+              "name": "STORAGE_ACCOUNT_ENDPOINT",
+              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken'))), '2023-01-01').primaryEndpoints.blob]"
+            }
+          ]
+        },
+        "clientAffinityEnabled": false
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', format('{0}-{1}', parameters('appName'), variables('resourceToken')))]",
+        "[resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Search/searchServices', format('rag-search-{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken')))]",
+        "[resourceId('Microsoft.Web/serverfarms', format('rag-ai-webui-plan-{0}', variables('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[format('{0}-insights-{1}', parameters('appName'), variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "Request_Source": "rest",
+        "DisableIpMasking": false,
+        "DisableLocalAuth": false,
+        "ForceCustomerStorageForProfiler": false,
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', format('rag-logs-{0}', variables('resourceToken')))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', format('rag-logs-{0}', variables('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2022-10-01",
+      "name": "[format('rag-logs-{0}', variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30,
+        "features": {
+          "searchVersion": 1,
+          "legacy": 0,
+          "enableLogAccessUsingOnlyResourcePermissions": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2023-05-01",
+      "name": "[format('rag-ai-{0}', variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "kind": "OpenAI",
+      "sku": {
+        "name": "[parameters('openAiSku')]"
+      },
+      "properties": {
+        "customSubDomainName": "[format('rag-ai-{0}', variables('resourceToken'))]",
+        "publicNetworkAccess": "Enabled",
+        "disableLocalAuth": false
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2023-04-15",
+      "name": "[format('rag-cosmos-{0}', variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "databaseAccountOfferType": "[parameters('cosmosDbOfferType')]",
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session",
+          "maxIntervalInSeconds": 5,
+          "maxStalenessPrefix": 100
+        },
+        "locations": [
+          {
+            "locationName": "[parameters('location')]",
+            "failoverPriority": 0,
+            "isZoneRedundant": false
+          }
+        ],
+        "capabilities": "[if(parameters('cosmosDbServerless'), createArray(createObject('name', 'EnableServerless')), createArray())]",
+        "publicNetworkAccess": "Enabled",
+        "enableAutomaticFailover": false,
+        "enableMultipleWriteLocations": false
+      }
+    },
+    {
+      "type": "Microsoft.Search/searchServices",
+      "apiVersion": "2023-11-01",
+      "name": "[format('rag-search-{0}', variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "[parameters('searchSku')]"
+      },
+      "properties": {
+        "replicaCount": 1,
+        "partitionCount": 1,
+        "hostingMode": "default",
+        "publicNetworkAccess": "enabled",
+        "networkRuleSet": {
+          "ipRules": []
+        },
+        "encryptionWithCmk": {
+          "enforcement": "Unspecified"
+        },
+        "disableLocalAuth": false,
+        "authOptions": {
+          "apiKeyOnly": {}
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[format('ragdocs{0}', variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "[parameters('storageAccountSku')]"
+      },
+      "properties": {
+        "accessTier": "[parameters('storageAccessTier')]",
+        "allowBlobPublicAccess": false,
+        "allowSharedKeyAccess": true,
+        "defaultToOAuthAuthentication": false,
+        "dnsEndpointType": "Standard",
+        "minimumTlsVersion": "TLS1_2",
+        "networkAcls": {
+          "defaultAction": "Allow"
+        },
+        "publicNetworkAccess": "Enabled",
+        "supportsHttpsTrafficOnly": true
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2023-01-01",
+      "name": "[format('{0}/{1}', format('ragdocs{0}', variables('resourceToken')), 'default')]",
+      "properties": {
+        "deleteRetentionPolicy": {
+          "enabled": true,
+          "days": 7
+        },
+        "containerDeleteRetentionPolicy": {
+          "enabled": true,
+          "days": 7
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2023-02-01-preview",
+      "name": "[format('rag-sql-{0}', variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "properties": {
+        "version": "12.0",
+        "publicNetworkAccess": "Enabled",
+        "administrators": {
+          "azureADOnlyAuthentication": true,
+          "administratorType": "ActiveDirectory",
+          "principalType": "Application",
+          "login": "[format('rag-ai-api-identity-{0}', variables('resourceToken'))]",
+          "sid": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('rag-ai-api-identity-{0}', variables('resourceToken'))), '2023-01-31').principalId]",
+          "tenantId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', format('rag-ai-api-identity-{0}', variables('resourceToken'))), '2023-01-31').tenantId]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2023-02-01-preview",
+      "name": "[format('{0}/{1}', format('rag-sql-{0}', variables('resourceToken')), 'rag_ai_bot_main')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('tags')]",
+      "sku": {
+        "name": "Basic",
+        "tier": "[parameters('sqlDatabaseEdition')]"
+      },
+      "properties": {
+        "collation": "[parameters('sqlDatabaseCollation')]",
+        "maxSizeBytes": 2147483648,
+        "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+        "zoneRedundant": false,
+        "readScale": "Disabled",
+        "requestedBackupStorageRedundancy": "Local",
+        "isLedgerOn": false
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Sql/servers/firewallRules",
+      "apiVersion": "2023-02-01-preview",
+      "name": "[format('{0}/{1}', format('rag-sql-{0}', variables('resourceToken')), 'AllowAllWindowsAzureIps')]",
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "0.0.0.0"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken')))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "AZURE_WEBAPP_NAME": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the API App Service"
+      },
+      "value": "[format('{0}-{1}', parameters('appName'), variables('resourceToken'))]"
+    },
+    "AZURE_WEBAPP_URL": {
+      "type": "string",
+      "metadata": {
+        "description": "The URL of the API App Service"
+      },
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('{0}-{1}', parameters('appName'), variables('resourceToken'))), '2023-01-01').defaultHostName)]"
+    },
+    "AZURE_WEBUI_NAME": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the WebUI App Service"
+      },
+      "value": "[format('rag-ai-webui-{0}', variables('resourceToken'))]"
+    },
+    "AZURE_WEBUI_URL": {
+      "type": "string",
+      "metadata": {
+        "description": "The URL of the WebUI App Service"
+      },
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.Web/sites', format('rag-ai-webui-{0}', variables('resourceToken'))), '2023-01-01').defaultHostName)]"
+    },
+    "appServiceId": {
+      "type": "string",
+      "metadata": {
+        "description": "The resource ID of the API App Service"
+      },
+      "value": "[resourceId('Microsoft.Web/sites', format('{0}-{1}', parameters('appName'), variables('resourceToken')))]"
+    },
+    "webuiAppServiceId": {
+      "type": "string",
+      "metadata": {
+        "description": "The resource ID of the WebUI App Service"
+      },
+      "value": "[resourceId('Microsoft.Web/sites', format('rag-ai-webui-{0}', variables('resourceToken')))]"
+    },
+    "appServicePrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "The principal ID of the API App Service managed identity"
+      },
+      "value": "[reference(resourceId('Microsoft.Web/sites', format('{0}-{1}', parameters('appName'), variables('resourceToken'))), '2023-01-01', 'full').identity.principalId]"
+    },
+    "webuiAppServicePrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "The principal ID of the WebUI App Service managed identity"
+      },
+      "value": "[reference(resourceId('Microsoft.Web/sites', format('rag-ai-webui-{0}', variables('resourceToken'))), '2023-01-01', 'full').identity.principalId]"
+    },
+    "applicationInsightsInstrumentationKey": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights Instrumentation Key"
+      },
+      "value": "[reference(resourceId('Microsoft.Insights/components', format('{0}-insights-{1}', parameters('appName'), variables('resourceToken'))), '2020-02-02').InstrumentationKey]"
+    },
+    "applicationInsightsConnectionString": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Insights Connection String"
+      },
+      "value": "[reference(resourceId('Microsoft.Insights/components', format('{0}-insights-{1}', parameters('appName'), variables('resourceToken'))), '2020-02-02').ConnectionString]"
+    },
+    "openAiEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure OpenAI Service endpoint"
+      },
+      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', format('rag-ai-{0}', variables('resourceToken'))), '2023-05-01').endpoint]"
+    },
+    "openAiServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure OpenAI Service name"
+      },
+      "value": "[format('rag-ai-{0}', variables('resourceToken'))]"
+    },
+    "cosmosDbEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Cosmos DB account endpoint"
+      },
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', format('rag-cosmos-{0}', variables('resourceToken'))), '2023-04-15').documentEndpoint]"
+    },
+    "cosmosDbAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Cosmos DB account name"
+      },
+      "value": "[format('rag-cosmos-{0}', variables('resourceToken'))]"
+    },
+    "searchServiceEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "AI Search service endpoint"
+      },
+      "value": "[format('https://{0}.search.windows.net', format('rag-search-{0}', variables('resourceToken')))]"
+    },
+    "searchServiceName": {
+      "type": "string",
+      "metadata": {
+        "description": "AI Search service name"
+      },
+      "value": "[format('rag-search-{0}', variables('resourceToken'))]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account name"
+      },
+      "value": "[format('ragdocs{0}', variables('resourceToken'))]"
+    },
+    "storageAccountBlobEndpoint": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account blob endpoint"
+      },
+      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', format('ragdocs{0}', variables('resourceToken'))), '2023-01-01').primaryEndpoints.blob]"
+    },
+    "sqlServerName": {
+      "type": "string",
+      "metadata": {
+        "description": "SQL Server name"
+      },
+      "value": "[format('rag-sql-{0}', variables('resourceToken'))]"
+    },
+    "sqlDatabaseName": {
+      "type": "string",
+      "metadata": {
+        "description": "SQL Database name"
+      },
+      "value": "rag_ai_bot_main"
+    },
+    "sqlServerFqdn": {
+      "type": "string",
+      "metadata": {
+        "description": "SQL Server FQDN"
+      },
+      "value": "[reference(resourceId('Microsoft.Sql/servers', format('rag-sql-{0}', variables('resourceToken'))), '2023-02-01-preview').fullyQualifiedDomainName]"
+    }
+  }
+}

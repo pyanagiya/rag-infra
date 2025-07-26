@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "value": "rag-ai-api"
+    },
+    "location": {
+      "value": "eastus2"
+    },
+    "environmentName": {
+      "value": "dev"
+    },
+    "appServicePlanSku": {
+      "value": "B1"
+    },
+    "pythonVersion": {
+      "value": "3.11"
+    },
+    "nodeVersion": {
+      "value": "20-lts"
+    },
+    "enableCors": {
+      "value": true
+    },
+    "openAiSku": {
+      "value": "S0"
+    },
+    "cosmosDbOfferType": {
+      "value": "Standard"
+    },
+    "cosmosDbServerless": {
+      "value": true
+    },
+    "searchSku": {
+      "value": "basic"
+    },
+    "storageAccountSku": {
+      "value": "Standard_LRS"
+    },
+    "storageAccessTier": {
+      "value": "Hot"
+    },
+    "sqlDatabaseEdition": {
+      "value": "Basic"
+    },
+    "sqlDatabaseCollation": {
+      "value": "Japanese_CI_AS"
+    }
+  }
+}
