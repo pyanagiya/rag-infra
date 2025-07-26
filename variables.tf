@@ -1,9 +1,9 @@
-# RAG AI-Driven Chatbot Infrastructure Variables
+# Variables for TEIOS AI-Driven API and WebUI Terraform deployment
 
 variable "app_name" {
   description = "Name of the application"
   type        = string
-  default     = "rag-ai-api"
+  default     = "teios-ai-api"
 
   validation {
     condition     = length(var.app_name) >= 1 && length(var.app_name) <= 50
@@ -11,26 +11,26 @@ variable "app_name" {
   }
 }
 
-variable "environment" {
+variable "location" {
+  description = "Location for all resources"
+  type        = string
+  default     = "eastus2"
+}
+
+variable "environment_name" {
   description = "Environment name (dev, staging, prod)"
   type        = string
-
-  validation {
-    condition     = contains(["dev", "staging", "prod"], var.environment)
-    error_message = "Environment must be one of: dev, staging, prod."
-  }
 }
 
 variable "resource_group_name" {
-  description = "Name of the existing resource group"
+  description = "Name of the resource group"
   type        = string
-  default     = "teios-ai-rg"
 }
 
-variable "location" {
-  description = "Azure region for resources"
+variable "resource_token" {
+  description = "Fixed token to use existing resources"
   type        = string
-  default     = "Japan East"
+  default     = "iymm4la6qt4mo"
 }
 
 variable "app_service_plan_sku" {
@@ -40,9 +40,10 @@ variable "app_service_plan_sku" {
 
   validation {
     condition = contains([
-      "F1", "B1", "B2", "S1", "S2", "S3", "P1V2", "P2V2", "P3V2"
+      "F1", "D1", "B1", "B2", "B3", "S1", "S2", "S3", 
+      "P1V2", "P2V2", "P3V2", "P1V3", "P2V3", "P3V3"
     ], var.app_service_plan_sku)
-    error_message = "App Service Plan SKU must be one of: F1, B1, B2, S1, S2, S3, P1V2, P2V2, P3V2."
+    error_message = "App Service Plan SKU must be one of: F1, D1, B1, B2, B3, S1, S2, S3, P1V2, P2V2, P3V2, P1V3, P2V3, P3V3."
   }
 }
 
@@ -52,8 +53,8 @@ variable "python_version" {
   default     = "3.11"
 
   validation {
-    condition     = contains(["3.9", "3.10", "3.11"], var.python_version)
-    error_message = "Python version must be one of: 3.9, 3.10, 3.11."
+    condition     = contains(["3.8", "3.9", "3.10", "3.11", "3.12"], var.python_version)
+    error_message = "Python version must be one of: 3.8, 3.9, 3.10, 3.11, 3.12."
   }
 }
 
@@ -63,9 +64,15 @@ variable "node_version" {
   default     = "20-lts"
 
   validation {
-    condition     = contains(["18-lts", "20-lts"], var.node_version)
-    error_message = "Node version must be one of: 18-lts, 20-lts."
+    condition     = contains(["16-lts", "18-lts", "20-lts"], var.node_version)
+    error_message = "Node version must be one of: 16-lts, 18-lts, 20-lts."
   }
+}
+
+variable "enable_cors" {
+  description = "Enable CORS for API"
+  type        = bool
+  default     = true
 }
 
 variable "openai_sku" {
@@ -75,19 +82,25 @@ variable "openai_sku" {
 
   validation {
     condition     = contains(["S0"], var.openai_sku)
-    error_message = "OpenAI SKU must be: S0."
+    error_message = "OpenAI SKU must be S0."
   }
 }
 
-variable "cosmos_db_offer_type" {
+variable "cosmosdb_offer_type" {
   description = "Cosmos DB offer type"
   type        = string
   default     = "Standard"
 
   validation {
-    condition     = contains(["Standard"], var.cosmos_db_offer_type)
-    error_message = "Cosmos DB offer type must be: Standard."
+    condition     = contains(["Standard"], var.cosmosdb_offer_type)
+    error_message = "Cosmos DB offer type must be Standard."
   }
+}
+
+variable "cosmosdb_serverless" {
+  description = "Enable Cosmos DB Serverless"
+  type        = bool
+  default     = true
 }
 
 variable "search_sku" {
@@ -111,9 +124,9 @@ variable "storage_account_replication_type" {
 
   validation {
     condition = contains([
-      "LRS", "GRS", "RAGRS", "ZRS"
+      "LRS", "GRS", "RAGRS", "ZRS", "GZRS", "RAGZRS"
     ], var.storage_account_replication_type)
-    error_message = "Storage replication type must be one of: LRS, GRS, RAGRS, ZRS."
+    error_message = "Storage Account replication type must be one of: LRS, GRS, RAGRS, ZRS, GZRS, RAGZRS."
   }
 }
 
@@ -124,7 +137,21 @@ variable "storage_access_tier" {
 
   validation {
     condition     = contains(["Hot", "Cool"], var.storage_access_tier)
-    error_message = "Storage access tier must be one of: Hot, Cool."
+    error_message = "Storage access tier must be Hot or Cool."
+  }
+}
+
+variable "sql_database_edition" {
+  description = "SQL Database edition"
+  type        = string
+  default     = "Basic"
+
+  validation {
+    condition = contains([
+      "Basic", "Standard", "Premium", "GeneralPurpose", 
+      "BusinessCritical", "Hyperscale"
+    ], var.sql_database_edition)
+    error_message = "SQL Database edition must be one of: Basic, Standard, Premium, GeneralPurpose, BusinessCritical, Hyperscale."
   }
 }
 
@@ -132,16 +159,4 @@ variable "sql_database_collation" {
   description = "SQL Database collation"
   type        = string
   default     = "Japanese_CI_AS"
-}
-
-variable "sql_admin_password" {
-  description = "SQL Server administrator password"
-  type        = string
-  sensitive   = true
-  default     = "TempPassword123!"
-
-  validation {
-    condition     = length(var.sql_admin_password) >= 8
-    error_message = "SQL admin password must be at least 8 characters long."
-  }
 }

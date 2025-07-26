@@ -1,185 +1,183 @@
-# RAG AI-Driven Chatbot Infrastructure
-# Terraform configuration for Azure resources with Managed Identity security
+# Main Terraform template for TEIOS AI-Driven API and WebUI
+# Azure Developer CLI compatible deployment
 
-terraform {
-  required_version = ">= 1.5"
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.117"
-    }
-    azurecaf = {
-      source  = "aztfmod/azurecaf"
-      version = "~> 1.2"
-    }
-  }
-}
-
+# Configure the Microsoft Azure Provider
 provider "azurerm" {
-  features {
-    key_vault {
-      purge_soft_delete_on_destroy    = true
-      recover_soft_deleted_key_vaults = true
-    }
-  }
+  features {}
 }
 
-# Data source for existing resource group
-data "azurerm_resource_group" "main" {
+# Data source for existing User-Assigned Managed Identity
+data "azurerm_user_assigned_identity" "existing" {
+  name                = "teios-ai-api-identity-${var.resource_token}"
+  resource_group_name = data.azurerm_resource_group.current.name
+}
+
+# Data source for current resource group
+data "azurerm_resource_group" "current" {
   name = var.resource_group_name
 }
 
-# Resource naming using azurecaf
-resource "azurecaf_name" "api_app_service" {
-  name          = var.app_name
-  resource_type = "azurerm_app_service"
-  suffixes      = [var.environment]
-}
-
-resource "azurecaf_name" "webui_app_service" {
-  name          = "${var.app_name}-webui"
-  resource_type = "azurerm_app_service"
-  suffixes      = [var.environment]
-}
-
+# Resource naming convention using azurecaf
 resource "azurecaf_name" "app_service_plan" {
-  name          = "${var.app_name}-plan"
+  name          = var.app_name
   resource_type = "azurerm_app_service_plan"
-  suffixes      = [var.environment]
+  prefixes      = ["plan"]
+  suffixes      = [var.resource_token]
+  clean_input   = true
 }
 
 resource "azurecaf_name" "webui_app_service_plan" {
-  name          = "${var.app_name}-webui-plan"
+  name          = "teios-ai-webui"
   resource_type = "azurerm_app_service_plan"
-  suffixes      = [var.environment]
+  prefixes      = ["plan"]
+  suffixes      = [var.resource_token]
+  clean_input   = true
 }
 
-resource "azurecaf_name" "openai" {
-  name          = "${var.app_name}-ai"
+resource "azurecaf_name" "app_service" {
+  name          = var.app_name
+  resource_type = "azurerm_app_service"
+  suffixes      = [var.resource_token]
+  clean_input   = true
+}
+
+resource "azurecaf_name" "webui_app_service" {
+  name          = "teios-ai-webui"
+  resource_type = "azurerm_app_service"
+  suffixes      = [var.resource_token]
+  clean_input   = true
+}
+
+resource "azurecaf_name" "application_insights" {
+  name          = var.app_name
+  resource_type = "azurerm_application_insights"
+  prefixes      = ["insights"]
+  suffixes      = [var.resource_token]
+  clean_input   = true
+}
+
+resource "azurecaf_name" "log_analytics_workspace" {
+  name          = "teios-logs"
+  resource_type = "azurerm_log_analytics_workspace"
+  suffixes      = [var.resource_token]
+  clean_input   = true
+}
+
+resource "azurecaf_name" "cognitive_account" {
+  name          = "teios-ai"
   resource_type = "azurerm_cognitive_account"
-  suffixes      = [var.environment]
+  suffixes      = [var.resource_token]
+  clean_input   = true
 }
 
-resource "azurecaf_name" "cosmos_db" {
-  name          = "${var.app_name}-cosmos"
+resource "azurecaf_name" "cosmosdb_account" {
+  name          = "teios-cosmos"
   resource_type = "azurerm_cosmosdb_account"
-  suffixes      = [var.environment]
+  suffixes      = [var.resource_token]
+  clean_input   = true
 }
 
 resource "azurecaf_name" "search_service" {
-  name          = "${var.app_name}-search"
+  name          = "teios-search"
   resource_type = "azurerm_search_service"
-  suffixes      = [var.environment]
+  suffixes      = [var.resource_token]
+  clean_input   = true
 }
 
 resource "azurecaf_name" "storage_account" {
-  name          = "${var.app_name}docs"
+  name          = "teiosdocs"
   resource_type = "azurerm_storage_account"
-  suffixes      = [var.environment]
+  suffixes      = [var.resource_token]
+  clean_input   = true
 }
 
 resource "azurecaf_name" "sql_server" {
-  name          = "${var.app_name}-sql"
+  name          = "teios-sql"
   resource_type = "azurerm_mssql_server"
-  suffixes      = [var.environment]
+  suffixes      = [var.resource_token]
+  clean_input   = true
 }
 
-resource "azurecaf_name" "log_analytics" {
-  name          = "${var.app_name}-logs"
-  resource_type = "azurerm_log_analytics_workspace"
-  suffixes      = [var.environment]
-}
-
-resource "azurecaf_name" "app_insights" {
-  name          = "${var.app_name}-insights"
-  resource_type = "azurerm_application_insights"
-  suffixes      = [var.environment]
-}
-
-# Log Analytics Workspace
-resource "azurerm_log_analytics_workspace" "main" {
-  name                = azurecaf_name.log_analytics.result
-  location            = data.azurerm_resource_group.main.location
-  resource_group_name = data.azurerm_resource_group.main.name
-  sku                 = "PerGB2018"
-  retention_in_days   = 30
-
+# Local variables
+locals {
   tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
+    Application     = var.app_name
+    Environment     = var.environment_name
+    "azd-env-name" = var.environment_name
   }
 }
 
-# Application Insights
-resource "azurerm_application_insights" "main" {
-  name                = azurecaf_name.app_insights.result
-  location            = data.azurerm_resource_group.main.location
-  resource_group_name = data.azurerm_resource_group.main.name
-  workspace_id        = azurerm_log_analytics_workspace.main.id
-  application_type    = "web"
-
-  tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
-  }
-}
-
-# App Service Plans
+# App Service Plan for API
 resource "azurerm_service_plan" "api" {
   name                = azurecaf_name.app_service_plan.result
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = data.azurerm_resource_group.main.location
-  os_type             = "Linux"
-  sku_name            = var.app_service_plan_sku
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
+  tags                = local.tags
 
-  tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
-  }
+  os_type  = "Linux"
+  sku_name = var.app_service_plan_sku
 }
 
+# WebUI App Service Plan
 resource "azurerm_service_plan" "webui" {
   name                = azurecaf_name.webui_app_service_plan.result
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = data.azurerm_resource_group.main.location
-  os_type             = "Linux"
-  sku_name            = var.app_service_plan_sku
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
+  tags                = local.tags
 
-  tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
-  }
+  os_type  = "Linux"
+  sku_name = var.app_service_plan_sku
+}
+
+# Log Analytics Workspace for Application Insights
+resource "azurerm_log_analytics_workspace" "main" {
+  name                = azurecaf_name.log_analytics_workspace.result
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
+  tags                = local.tags
+
+  sku               = "PerGB2018"
+  retention_in_days = 30
+}
+
+# Application Insights for monitoring
+resource "azurerm_application_insights" "main" {
+  name                = azurecaf_name.application_insights.result
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
+  tags                = local.tags
+
+  workspace_id     = azurerm_log_analytics_workspace.main.id
+  application_type = "web"
+  disable_ip_masking = false
 }
 
 # Azure OpenAI Service
 resource "azurerm_cognitive_account" "openai" {
-  name                = azurecaf_name.openai.result
-  location            = data.azurerm_resource_group.main.location
-  resource_group_name = data.azurerm_resource_group.main.name
-  kind                = "OpenAI"
-  sku_name            = var.openai_sku
-  
-  custom_subdomain_name = azurecaf_name.openai.result
-  public_network_access_enabled = true
+  name                = azurecaf_name.cognitive_account.result
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
+  tags                = local.tags
 
-  tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
-  }
+  kind               = "OpenAI"
+  sku_name           = var.openai_sku
+  public_network_access_enabled = true
+  local_auth_enabled = true
+  custom_subdomain_name = azurecaf_name.cognitive_account.result
 }
 
 # Cosmos DB Account
 resource "azurerm_cosmosdb_account" "main" {
-  name                = azurecaf_name.cosmos_db.result
-  location            = data.azurerm_resource_group.main.location
-  resource_group_name = data.azurerm_resource_group.main.name
-  offer_type          = "Standard"
-  kind                = "GlobalDocumentDB"
+  name                = azurecaf_name.cosmosdb_account.result
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
+  tags                = local.tags
+
+  offer_type      = var.cosmosdb_offer_type
+  kind           = "GlobalDocumentDB"
+  automatic_failover_enabled = false
+  multiple_write_locations_enabled = false
+  public_network_access_enabled = true
 
   consistency_policy {
     consistency_level       = "Session"
@@ -188,76 +186,61 @@ resource "azurerm_cosmosdb_account" "main" {
   }
 
   geo_location {
-    location          = data.azurerm_resource_group.main.location
+    location          = var.location
     failover_priority = 0
     zone_redundant    = false
   }
 
-  capabilities {
-    name = "EnableServerless"
-  }
-
-  public_network_access_enabled = true
-  automatic_failover_enabled    = false
-  multiple_write_locations_enabled = false
-
-  tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
+  dynamic "capabilities" {
+    for_each = var.cosmosdb_serverless ? [1] : []
+    content {
+      name = "EnableServerless"
+    }
   }
 }
 
 # AI Search Service
 resource "azurerm_search_service" "main" {
   name                = azurecaf_name.search_service.result
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = data.azurerm_resource_group.main.location
-  sku                 = var.search_sku
-  replica_count       = 1
-  partition_count     = 1
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
+  tags                = local.tags
 
+  sku                         = var.search_sku
+  replica_count              = 1
+  partition_count            = 1
+  hosting_mode               = "default"
   public_network_access_enabled = true
-
-  tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
-  }
+  local_authentication_enabled = true
 }
 
 # Storage Account
 resource "azurerm_storage_account" "main" {
-  name                     = azurecaf_name.storage_account.result
-  resource_group_name      = data.azurerm_resource_group.main.name
-  location                 = data.azurerm_resource_group.main.location
-  account_tier             = "Standard"
-  account_replication_type = var.storage_account_replication_type
-  access_tier              = var.storage_access_tier
-  
-  allow_nested_items_to_be_public = false
-  shared_access_key_enabled       = true
-  default_to_oauth_authentication = false
-  min_tls_version                 = "TLS1_2"
-  https_traffic_only_enabled      = true
+  name                = azurecaf_name.storage_account.result
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
+  tags                = local.tags
+
+  account_tier                      = "Standard"
+  account_replication_type          = var.storage_account_replication_type
+  access_tier                       = var.storage_access_tier
+  allow_nested_items_to_be_public   = false
+  shared_access_key_enabled         = true
+  https_traffic_only_enabled        = true
+  min_tls_version                   = "TLS1_2"
+  public_network_access_enabled     = true
 
   network_rules {
     default_action = "Allow"
   }
-
-  tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
-  }
 }
 
-# Storage Account Blob Service
+# Blob Service for Storage Account
 resource "azurerm_storage_management_policy" "main" {
   storage_account_id = azurerm_storage_account.main.id
 
   rule {
-    name    = "DeleteAfter7Days"
+    name    = "deleteafter7days"
     enabled = true
     filters {
       blob_types = ["blockBlob"]
@@ -272,38 +255,38 @@ resource "azurerm_storage_management_policy" "main" {
 
 # SQL Server
 resource "azurerm_mssql_server" "main" {
-  name                         = azurecaf_name.sql_server.result
-  resource_group_name          = data.azurerm_resource_group.main.name
-  location                     = data.azurerm_resource_group.main.location
+  name                = azurecaf_name.sql_server.result
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
+  tags                = local.tags
+
   version                      = "12.0"
-  administrator_login          = "sqladmin"
-  administrator_login_password = var.sql_admin_password
   public_network_access_enabled = true
 
-  tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
+  azuread_administrator {
+    login_username              = data.azurerm_user_assigned_identity.existing.name
+    object_id                   = data.azurerm_user_assigned_identity.existing.principal_id
+    tenant_id                   = data.azurerm_user_assigned_identity.existing.tenant_id
+    azuread_authentication_only = true
   }
 }
 
 # SQL Database
 resource "azurerm_mssql_database" "main" {
-  name           = "${var.app_name}_ai_bot_main"
+  name           = "teios_ai_bot_main"
   server_id      = azurerm_mssql_server.main.id
-  collation      = var.sql_database_collation
-  max_size_gb    = 2
-  sku_name       = "Basic"
-  zone_redundant = false
-  
-  tags = {
-    Application   = var.app_name
-    Environment   = var.environment
-    "azd-env-name" = var.environment
-  }
+  tags           = local.tags
+
+  collation                   = var.sql_database_collation
+  max_size_gb                 = 2
+  sku_name                    = "Basic"
+  zone_redundant              = false
+  read_scale                  = false
+  storage_account_type        = "Local"
+  ledger_enabled              = false
 }
 
-# SQL Firewall Rule for Azure Services
+# SQL Server Firewall Rule to allow Azure services
 resource "azurerm_mssql_firewall_rule" "azure_services" {
   name             = "AllowAllWindowsAzureIps"
   server_id        = azurerm_mssql_server.main.id
@@ -313,38 +296,45 @@ resource "azurerm_mssql_firewall_rule" "azure_services" {
 
 # API App Service
 resource "azurerm_linux_web_app" "api" {
-  name                = azurecaf_name.api_app_service.result
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = data.azurerm_resource_group.main.location
+  name                = azurecaf_name.app_service.result
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
   service_plan_id     = azurerm_service_plan.api.id
+  tags = merge(local.tags, {
+    "azd-service-name" = "api"
+  })
 
-  https_only = true
+  https_only                    = true
+  client_affinity_enabled       = false
+  public_network_access_enabled = true
 
   identity {
     type = "SystemAssigned"
   }
 
   site_config {
-    always_on                         = true
-    ftps_state                       = "Disabled"
-    minimum_tls_version              = "1.2"
-    scm_minimum_tls_version          = "1.2"
-    use_32_bit_worker                = false
-    websockets_enabled               = false
-    managed_pipeline_mode            = "Integrated"
-
+    always_on                                     = true
+    ftps_state                                   = "Disabled"
+    minimum_tls_version                          = "1.2"
+    scm_minimum_tls_version                      = "1.2"
+    use_32_bit_worker                            = false
+    websockets_enabled                           = false
+    managed_pipeline_mode                        = "Integrated"
     application_stack {
       python_version = var.python_version
     }
 
-    cors {
-      allowed_origins     = [
-        "https://${azurecaf_name.webui_app_service.result}.azurewebsites.net",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:8080"
-      ]
-      support_credentials = true
+    dynamic "cors" {
+      for_each = var.enable_cors ? [1] : []
+      content {
+        allowed_origins = [
+          "https://${azurecaf_name.webui_app_service.result}.azurewebsites.net",
+          "http://localhost:3000",
+          "http://localhost:5173",
+          "http://localhost:8080"
+        ]
+        support_credentials = true
+      }
     }
   }
 
@@ -353,64 +343,50 @@ resource "azurerm_linux_web_app" "api" {
     "WEBSITES_PORT"                       = "8000"
     "SCM_DO_BUILD_DURING_DEPLOYMENT"     = "true"
     "ENABLE_ORYX_BUILD"                   = "true"
-    "ENVIRONMENT"                         = var.environment
+    "ENVIRONMENT"                         = var.environment_name
     "PYTHON_ENABLE_GUNICORN_MULTIWORKERS" = "true"
-    
-    # Azure service endpoints (using Managed Identity)
-    "AZURE_OPENAI_ENDPOINT"      = azurerm_cognitive_account.openai.endpoint
-    "COSMOS_DB_ENDPOINT"         = azurerm_cosmosdb_account.main.endpoint
-    "SEARCH_SERVICE_ENDPOINT"    = "https://${azurerm_search_service.main.name}.search.windows.net"
-    "STORAGE_ACCOUNT_NAME"       = azurerm_storage_account.main.name
-    "STORAGE_ACCOUNT_ENDPOINT"   = azurerm_storage_account.main.primary_blob_endpoint
-    "SQL_SERVER_NAME"            = azurerm_mssql_server.main.fully_qualified_domain_name
-    "SQL_DATABASE_NAME"          = azurerm_mssql_database.main.name
-    "SQL_CONNECTION_STRING"      = "Server=tcp:${azurerm_mssql_server.main.fully_qualified_domain_name},1433;Database=${azurerm_mssql_database.main.name};Authentication=Active Directory Managed Identity;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;"
-    
-    # Application Insights
-    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
-    "ApplicationInsightsAgent_EXTENSION_VERSION" = "~3"
+    "AZURE_OPENAI_ENDPOINT"               = azurerm_cognitive_account.openai.endpoint
+    "AZURE_OPENAI_API_KEY"                = azurerm_cognitive_account.openai.primary_access_key
+    "COSMOS_DB_ENDPOINT"                  = azurerm_cosmosdb_account.main.endpoint
+    "COSMOS_DB_KEY"                       = azurerm_cosmosdb_account.main.primary_key
+    "SEARCH_SERVICE_ENDPOINT"             = "https://${azurerm_search_service.main.name}.search.windows.net"
+    "SEARCH_SERVICE_KEY"                  = azurerm_search_service.main.primary_key
+    "STORAGE_ACCOUNT_NAME"                = azurerm_storage_account.main.name
+    "STORAGE_ACCOUNT_KEY"                 = azurerm_storage_account.main.primary_access_key
+    "STORAGE_ACCOUNT_CONNECTION_STRING"   = azurerm_storage_account.main.primary_connection_string
+    "SQL_SERVER_NAME"                     = azurerm_mssql_server.main.fully_qualified_domain_name
+    "SQL_DATABASE_NAME"                   = azurerm_mssql_database.main.name
+    "SQL_CONNECTION_STRING"               = "Server=tcp:${azurerm_mssql_server.main.fully_qualified_domain_name},1433;Database=${azurerm_mssql_database.main.name};Authentication=Active Directory Managed Identity;Encrypt=true;TrustServerCertificate=false;Connection Timeout=30;"
   }
-
-  tags = {
-    Application        = var.app_name
-    Environment        = var.environment
-    "azd-env-name"     = var.environment
-    "azd-service-name" = "api"
-  }
-
-  depends_on = [
-    azurerm_service_plan.api,
-    azurerm_cognitive_account.openai,
-    azurerm_cosmosdb_account.main,
-    azurerm_search_service.main,
-    azurerm_storage_account.main,
-    azurerm_mssql_server.main,
-    azurerm_mssql_database.main
-  ]
 }
 
 # WebUI App Service
 resource "azurerm_linux_web_app" "webui" {
   name                = azurecaf_name.webui_app_service.result
-  resource_group_name = data.azurerm_resource_group.main.name
-  location            = data.azurerm_resource_group.main.location
+  location            = var.location
+  resource_group_name = data.azurerm_resource_group.current.name
   service_plan_id     = azurerm_service_plan.webui.id
+  tags = merge(local.tags, {
+    "azd-service-name" = "webui"
+  })
 
-  https_only = true
+  https_only                    = true
+  client_affinity_enabled       = false
+  public_network_access_enabled = true
 
   identity {
     type = "SystemAssigned"
   }
 
   site_config {
-    always_on                         = true
-    ftps_state                       = "Disabled"
-    minimum_tls_version              = "1.2"
-    scm_minimum_tls_version          = "1.2"
-    use_32_bit_worker                = false
-    websockets_enabled               = false
-    managed_pipeline_mode            = "Integrated"
-
+    always_on                     = true
+    ftps_state                   = "Disabled"
+    minimum_tls_version          = "1.2"
+    scm_minimum_tls_version      = "1.2"
+    use_32_bit_worker            = false
+    websockets_enabled           = false
+    managed_pipeline_mode        = "Integrated"
+    
     application_stack {
       node_version = var.node_version
     }
@@ -421,81 +397,13 @@ resource "azurerm_linux_web_app" "webui" {
     "WEBSITES_PORT"                       = "3000"
     "SCM_DO_BUILD_DURING_DEPLOYMENT"     = "true"
     "ENABLE_ORYX_BUILD"                   = "true"
-    "ENVIRONMENT"                         = var.environment
-    
-    # API endpoints
-    "REACT_APP_API_URL"       = "https://${azurerm_linux_web_app.api.default_hostname}"
-    "VITE_API_URL"            = "https://${azurerm_linux_web_app.api.default_hostname}"
-    "NEXT_PUBLIC_API_URL"     = "https://${azurerm_linux_web_app.api.default_hostname}"
-    "VUE_APP_API_URL"         = "https://${azurerm_linux_web_app.api.default_hostname}"
-    
-    # Azure service endpoints
-    "AZURE_OPENAI_ENDPOINT"   = azurerm_cognitive_account.openai.endpoint
-    "SEARCH_SERVICE_ENDPOINT" = "https://${azurerm_search_service.main.name}.search.windows.net"
-    "STORAGE_ACCOUNT_ENDPOINT" = azurerm_storage_account.main.primary_blob_endpoint
-    
-    # Application Insights
-    "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.main.connection_string
+    "ENVIRONMENT"                         = var.environment_name
+    "REACT_APP_API_URL"                   = "https://${azurerm_linux_web_app.api.default_hostname}"
+    "VITE_API_URL"                        = "https://${azurerm_linux_web_app.api.default_hostname}"
+    "NEXT_PUBLIC_API_URL"                 = "https://${azurerm_linux_web_app.api.default_hostname}"
+    "VUE_APP_API_URL"                     = "https://${azurerm_linux_web_app.api.default_hostname}"
+    "AZURE_OPENAI_ENDPOINT"               = azurerm_cognitive_account.openai.endpoint
+    "SEARCH_SERVICE_ENDPOINT"             = "https://${azurerm_search_service.main.name}.search.windows.net"
+    "STORAGE_ACCOUNT_ENDPOINT"            = azurerm_storage_account.main.primary_blob_endpoint
   }
-
-  tags = {
-    Application        = var.app_name
-    Environment        = var.environment
-    "azd-env-name"     = var.environment
-    "azd-service-name" = "webui"
-  }
-
-  depends_on = [
-    azurerm_service_plan.webui,
-    azurerm_linux_web_app.api,
-    azurerm_cognitive_account.openai,
-    azurerm_search_service.main,
-    azurerm_storage_account.main
-  ]
-}
-
-# Role Assignments for Managed Identity Authentication
-resource "azurerm_role_assignment" "api_openai_user" {
-  scope                = azurerm_cognitive_account.openai.id
-  role_definition_name = "Cognitive Services OpenAI User"
-  principal_id         = azurerm_linux_web_app.api.identity[0].principal_id
-  principal_type       = "ServicePrincipal"
-
-  depends_on = [azurerm_linux_web_app.api]
-}
-
-resource "azurerm_role_assignment" "api_cosmos_contributor" {
-  scope                = azurerm_cosmosdb_account.main.id
-  role_definition_name = "Cosmos DB Built-in Data Contributor"
-  principal_id         = azurerm_linux_web_app.api.identity[0].principal_id
-  principal_type       = "ServicePrincipal"
-
-  depends_on = [azurerm_linux_web_app.api]
-}
-
-resource "azurerm_role_assignment" "api_search_contributor" {
-  scope                = azurerm_search_service.main.id
-  role_definition_name = "Search Service Contributor"
-  principal_id         = azurerm_linux_web_app.api.identity[0].principal_id
-  principal_type       = "ServicePrincipal"
-
-  depends_on = [azurerm_linux_web_app.api]
-}
-
-resource "azurerm_role_assignment" "api_storage_blob_contributor" {
-  scope                = azurerm_storage_account.main.id
-  role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_web_app.api.identity[0].principal_id
-  principal_type       = "ServicePrincipal"
-
-  depends_on = [azurerm_linux_web_app.api]
-}
-
-resource "azurerm_role_assignment" "webui_storage_blob_reader" {
-  scope                = azurerm_storage_account.main.id
-  role_definition_name = "Storage Blob Data Reader"
-  principal_id         = azurerm_linux_web_app.webui.identity[0].principal_id
-  principal_type       = "ServicePrincipal"
-
-  depends_on = [azurerm_linux_web_app.webui]
 }
